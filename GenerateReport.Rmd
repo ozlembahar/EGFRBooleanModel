@@ -1,0 +1,157 @@
+---
+title: "A Boolean model of EGFR signalling in adult neurogenesis"
+author: "[Yozlem Bahar](gusbahyo@student.gu.se)"
+date: "`r format(Sys.Date(), '%d %B, %Y')`"
+output:
+  html_document:
+    css: style.css
+    section_divs: yes
+  word_document: default
+  pdf_document: default
+csl: cell.csl
+bibliography: bibliography.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE, fig.width = 4.7, fig.height = 4, fig.align = "left")
+source('http://research.rupertoverall.net/include.R')
+require(igraph)
+require(BoolNet)
+require(readxl)
+```
+
+The Boolean model of EGFR signaling was generated as a reflection of NSC culture. In this way, we are able to analyze the behavior of pathway components under certain conditions such as proliferation or differentiation. This method therefore allows to generate testable hyphotheses in vitro model. 
+ 
+The work of Samaga *et al.* [-@Samaga2009] has been helpful for the implementation of  as they used a boolean model.
+MANGO database was used to search for genes involved in EGFR pathway and regulating adult neurogenesis Overall *et al.*. [-@Overall2012].
+
+
+```{r proliferation_model}
+# Read rules from file
+model = loadNetwork("EgfrBoolean.txt", symbolic = F) 
+
+# Double-check gene names
+mapping = AnnotationDbi::select(org.Mm.eg.db::org.Mm.eg.db, keys = model$genes, keytype = "SYMBOL", columns = "ENTREZID")
+mapping$SYMBOL[is.na(mapping$ENTREZID)] # Only non-gene processes should be here
+
+#Generate a starting state
+inputs = sapply(model$interactions, "[[", "expression") == sapply(model, names)$interactions 
+path.starting.state = (BoolNet::getPathToAttractor(model, as.numeric(inputs)))
+
+#Get gene names for the nodes in the model
+model.info = data.frame(read_excel('EgfrMap.xlsx', col_types = "text"), row.names = 3, stringsAsFactors = F)
+names(inputs) = model$genes
+model.geneids = model.info[model$genes, "Gene.ID..Entrez."]
+
+
+# Reorder the nodes for tidy plotting
+phen = c("Apoptosis", "Proliferation" ,"Neurogenesis")
+comp = c("Mtorc1", "Mtorc2")
+chem = "diacylglycerol"
+root = "Egf"
+gene = setdiff(model$genes, c(phen, comp, chem, root))
+node.order = c(root, gene, comp, chem, phen)
+
+
+#TODO Ugly plots
+# Get iGraph object and visually check sanity of loaded model
+graph = plotNetworkWiring(model, plotIt = F)
+edges = as.data.frame(as_edgelist(graph), stringsAsFactors = F)
+colnames(edges) = c("Source", "Target")
+```
+\newpage
+# Generate a starting state where the input node is also 0
+```{r proliferation_simulation, fig.height = 10, fig.width = 8}
+
+start.state <- getPathToAttractor(model, rep(0, 53))
+par(mar = c(1, 10, 2.5, 2))
+plotSequence(sequence= start.state, offColor = "#CCCCCC", onColor = "#006633", reverse = F, title = "An attractor of an un-stimulated cell")
+
+
+```
+\newpage
+# Simulation of proliferation conditions by setting Egf to 1
+Assumption: Prkca which is the inhibitor of Egfr is initially inactive
+```{r proliferation_Egf1, fig.height = 10, fig.width = 8}
+
+ko.state = model
+ko.state$interactions$Prkca$func = rep(0, length(ko.state$interactions$Prkca$func))
+ko.state$interactions$Egf$func = rep(1, length(ko.state$interactions$Egf$func))
+attractorpath = getPathToAttractor(ko.state, as.numeric(inputs))
+
+# Plot the attractor table illustrating NSCs under proliferation conditions
+par(mar = c(1, 10, 2.5, 2))
+attractor.results = plotSequence(sequence = attractorpath,  offColor = "#CCCCCC", onColor = "#006633", reverse = F, title = "Egf=1" )
+
+```
+#Robustness Analysis 
+
+Robusness analysis was done using a computer-intensive test. This was done because knocking-out single nodes did not help induce perturbation to the network as signaling networks known to be robust. This was also suggested though in vitro experiments as NSCs with TF knockouts showed similar morphology and cell density with the negative control.
+
+In this test, transition robustness of the network was measured in terms of Hamming distance (d).
+
+```{r robustness_analysis, fig.height = 8, fig.width = 8}
+# Is attractor in the presence of EGF the same as the data at 0 h?
+#r  <- perturbTrajectories(model, measure="sensitivity",  numSamples=1000, flipBits=1) # measure=sensitivity,
+#r$value
+
+#perturbedNet <- perturbNetwork(ko.state,  perturb="functions", method="bitflip")
+
+#Attractor robustness can be measured due to the scale of the map
+#res <- testNetworkProperties(model, numRandomNets=100, testFunction="testAttractorRobustness", #testFunctionParams=list(perturb="functions", numSamples=10), accumulation = "characteristic", alternative= "less")
+
+#Calculate normalized hamming distance:the number of genes which differ between the original successor state and the successor state of the perturbed.
+# If the distance is zero, the mutation has no effect on evaluated network behavior
+par(mar = c(6, 4.1, 4.1, 2.1))
+res <- testNetworkProperties(ko.state, numRandomNets=1000, testFunction="testTransitionRobustness", testFunctionParams = list(numSamples=100), alternative= "less")
+res$pval
+res$significant
+```
+
+
+
+\newpage
+# Simulation of differentiation conditions by setting Egf to 0
+# Assumption: The inhibitor of Egfr is activated in a negative feedback loop.
+
+```{r differentiation_condition, fig.height =10, fig.width = 8}
+
+ko.state$interactions$Egf$func = rep(0, length(ko.state$interactions$Egf$func))
+ko.state$interactions$Prkca$func = rep(1, length(ko.state$interactions$Prkca$func))
+diffpath = getPathToAttractor(ko.state, attractorpath[9, 1:53]) # attractorpath of proliferation conditions
+par(mar = c(1, 10, 2.5, 2))
+diff.attractor = plotSequence(sequence = diffpath, offColor = "#CCCCCC", onColor = "#006633", reverse = F, title = "Egf=0" )
+
+```
+
+# Knockout Jun under proliferation conditions
+```{r TF knock-outs, fig.height = 8, fig.width = 6}
+
+ko.state = model
+
+#Knock-out Jun 
+ko.state$interactions$Jun$func = rep(0, length(ko.state$interactions$Jun$func))
+ko.state$interactions$Egf$func = rep(1, length(ko.state$interactions$Jun$func))
+ko.state$interactions$Prkca$func = rep(0, length(ko.state$interactions$Prkca$func))
+
+#Attractor analysis
+attractorpath = getPathToAttractor(ko.state, as.numeric(inputs))
+
+par(mar = c(1, 10, 2.5, 2))
+attractor.results = plotSequence(sequence = attractorpath, offColor = "#CCCCCC", onColor = "#006633", reverse = F, title = "Egf=1, Jun=0" )
+
+```
+
+
+```{r}
+#
+#capture.output(sessionInfo())
+##########
+```
+
+<br>
+<hr>
+
+
+
+
