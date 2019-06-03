@@ -1,0 +1,52 @@
+body{ /* Normal  */
+      font-size: 11pt;
+  }
+table{
+    margin-bottom: 11pt;
+}
+td {  /* Table  */
+  font-size: 9pt;
+  padding: 4px;
+  border: 1px solid #D0D0D0;
+}
+h1 { /* Header 1 */
+  font-size: 14pt;
+  color: DarkBlue;
+}
+h2 { /* Header 2 */
+  font-size: 11pt;
+  font-weight: bold;
+}
+h3 { /* Header 3 */
+  font-size: 11pt;
+  font-style: italic;
+  color: DarkBlue;
+}
+h4 { /* Name and date headers */
+  font-size: 11pt;
+}
+.r{ /* Code block */
+    font-size: 11pt;
+}
+pre { /* Code block - determines code spacing between lines */
+    font-size: 11pt;
+}
+img{
+  padding: 32px;
+}
+.pagebreak{
+	page-break-before: always;
+}
+.hi{ /* Custom highlighted style */
+	background-color: #E4E080F0
+}
+@page {
+  margin: 10%;
+
+  @bottom-center {
+    font-family: sans-serif;
+    font-weight: bold;
+    font-size: 2em;
+    content: counter(page);
+  }
+}
