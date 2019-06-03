@@ -1,0 +1,54 @@
+targets, factors
+Egf, Egf
+Egfr, Egf & ! Prkca
+Shc1, Egfr
+Grb2, Shc1 | Egfr | Jak1 | Jak2
+Gab1, Egfr |  Grb2
+Sos1, Grb2
+Rasa1, Sos1 
+Vav2, Egfr
+Raf1, Rasa1
+Rac1, Vav2 | Sos1
+Cdc42, Vav2 | Sos1
+Src, Shc1
+Jak1, Egfr
+Jak2, Egfr 
+Stat1, Src | (Jak1 & Jak2) 
+Stat3, Src | (Jak1 & Jak2)
+Pik3r1, Egfr | Rasa1 | Gab1 | Jak1 | Jak2
+Pdpk1, Pik3r1 | Mtorc2
+Akt1, Pdpk1 | Mtorc2	
+Foxo1, ! Akt1
+Mdm2, Akt1 | Trp53
+Trp53, ! Mdm2
+Tsc2, !(Akt1 | Mapk1) | Gsk3b
+Mtorc1, ! Tsc2 & Rasa1
+Mtorc2, (! Rps6kb1 | ! Gsk3b) & ( Pik3r1 | Tsc2)
+Eif4ebp1, ! Mtorc1
+Eif4e, ! Eif4ebp1 | Mapk1
+Ccnd1, ! Foxo1 | Eif4e | (Jun & Fos)
+Cdk4, Ccnd1
+Cdk6, Ccnd1
+Plcg1, Egfr
+diacylglycerol, Plcg1
+Prkca, diacylglycerol
+Nfkb1, Prkca & Gsk3b
+Map2k1, (Raf1 & ! Prkca) | (Rac1 & Cdc42)
+Mapk1, Map2k1
+Bax, Trp53 
+Casp3, Bax
+Apoptosis, Casp3
+Proliferation, Akt1 & !Gsk3b & Egf & Cdk4 & Cdk6 & Ccnd1 & ! Nfkb1
+Neurogenesis,   Cdk6 & ! Bax & Nfkb1
+Rps6kb1, Mtorc1 | Mapk1 | Jkamp
+Mapkapk2, Mapk14
+Rps6ka1, Mapk1 & Pdpk1
+Mapk14, Mapk1 | Map2k1 | Map2k4 
+Creb1, Rps6ka1 | Mapkapk2
+Gsk3b, ! Rps6ka1 | ! Akt1
+Myc, Mapk1 & ! Gsk3b
+Map2k4, Rac1 & Cdc42
+Map2k7, Rac1 & Cdc42
+Jkamp, Map2k4 & Map2k7 
+Jun, Jkamp
+Fos, Jkamp | (Rps6ka1 & Mapk1)
