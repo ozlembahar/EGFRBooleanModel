@@ -1,5 +1,6 @@
-source("http://research.rupertoverall.net/include.R")
+#### Attractor and robustness analysis of Boolean model of the EGFR signaling#####
 
+# Load packages needed for simulations 
 require(igraph)
 require(BoolNet)
 require(readxl)
